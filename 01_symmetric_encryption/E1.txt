@@ -1,0 +1,18 @@
+    Run the code in a virtual environment:
+
+source env/bin/activate
+
+    deactivate using
+
+deactivate
+
+    Run using:
+
+python3 ppmcrypt.py
+
+
+Running the script will generate .ppm (encrypted & corrupted) images for each of the tasks (as well as a env directory).
+
+First 3 tasks are simple implementations of the following encryption methods: ECB, CBC, CTR.
+Task 4 uses GCM method which features authentication, allowing for safe and good encryption.
+Task 5 shows that GCM still has a downside, as the metadata would also need to be protected.
