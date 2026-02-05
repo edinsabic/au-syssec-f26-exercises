@@ -1,0 +1,78 @@
+Adversaries:
+	1. spooks
+	2. crooks
+	3. geeks
+	4. swamp
+
+attacker goal: STRIDE
+
+Where is the attacker? EINOO
+
+	offline attack: password cracking
+
+	EINOO motivates the concept of defense in-depth
+
+
+
+Threat modelling is a term applied to the techniques that are used to model and analyse technology systems and services to better understand how that system or service might be attacked or otherwise fail, and the measures or controls needed to manage the risk posed by such attacks or failings.
+
+Book: A threat model identifies threats, threat agents, and attack vectors that the target system considers in scope to defend against—known from the past, or anticipated. Those considered out of scope should be explicitly recorded as such. Threat modeling takes into account adversary modeling (Section 1.4), and should identify and consider all assumptions made about the target system, environment, and attackers. Threat modeling can be done by several different approaches (figure 1.5), as discussed in the subsections below.
+
+
+Threat modelling exercises:
+
+Example 1 (Online trading platform):
+
+Attacker (who, goal, where):
+malicious insider, cybercriminal, spooks (law enforcement, intel), security researchers; all STRIDE goals
+
+Attack Surface:
+UI, backend, software stack, APIs, traffic, databases, users, employees, mobile app, devices
+
+Policies: integrity, authorisation, authentication, confidentiality, availability, non-repudiation
+
+Mechanisms: access control, encryption (in transit, at rest), backup, digital signatures, rate limiting, DoS mitigations
+
+
+Example 2 (IOT pacemaker):
+
+Attacker (who, goal, where):
+spooks, terrorists, security researcher, cybercriminals (swamp); DoS, tampering, information disclosure, privilation escalation
+
+Attack Surface:
+supply chain / physical devices, firmware, wireless comms, cloud / backend / databases
+
+Policies:
+confidentiality / privacy, availability, integrity, (medical) compliance
+
+Mechanisms:
+lightweight operation, data encryption, local data storage, user authentication, access control
+
+
+Example 3 (An embassy):
+
+Attacker (who, goal, where):
+
+Attack Surface:
+
+Policies:
+
+Mechanisms:
+
+
+Threat models changing: USA leaving Afghanistan and leaving biometric data - the Taliban could see who colluded with Americans
+
+
+Case study 1 (Paper elections):
+
+Attackers:
+spooks, political parties, crooks, activists, anti-state activists, swamp, crooks; spoofing, tampering, DoS, information disclosure, disinformation 
+
+Attack Surface:
+poll workers, ballot transport, ballot boxes, voters, ballot, building, schedule, social media, citizen registry, database of outcomes
+
+Policies:
+confidentiality, integrity, availability, anonimity, ballot secrecy
+
+Mechanisms: 
+redundancy, physical security, eligibility, voting booth
