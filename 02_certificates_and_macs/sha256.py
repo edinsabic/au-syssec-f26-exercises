@@ -25,6 +25,14 @@ def sha256(message: bytes) -> bytes:
 
     # TODO implement this
     pass
+    # ------------ solution -----------------
+    '''padding = build_padding(len(message))
+    padded_message = message + padding
+    chunks = split_chunks(padded_message)
+    for chunk in chunks:
+        internal_state = compress(chunk, internal_state)
+    return internal_state'''
+    # -------- end solution -----------------
 
 
 def sha256_extend(given_hash: bytes, prefix_length: int, message_suffix: bytes) -> bytes:
@@ -44,6 +52,15 @@ def sha256_extend(given_hash: bytes, prefix_length: int, message_suffix: bytes) 
 
     # TODO implement this
     pass
+    # ------------ solution -----------------
+    padding = build_padding(len(message_suffix) + prefix_length)
+    padded_message = message_suffix + padding
+    chunks = split_chunks(padded_message)
+    internal_state = given_hash
+    for chunk in chunks:
+        internal_state = compress(chunk, internal_state)
+    return internal_state
+    # -------- end solution -----------------
 
 
 def padded_size(message_len: int) -> int:

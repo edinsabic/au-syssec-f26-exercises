@@ -9,12 +9,15 @@ Exercise 2
 
 Use www.instagram.com for the example
 
+
+
 root CA: cert_2.pem
     root CA is self-signed and pre-installed in your system, so it's trusted by default.
 
 intermediate certificates: cert_1.pem
 
 server certificate: cert_0.pem
+
 
 
 This organization lets you verify the chain step-by-step:
@@ -44,23 +47,152 @@ We do all of this implicitly every time in a browser (when we use HTTPS, and the
 
 8. Run python in interactive mode; just type python & enter
 
->>> Modulus=A3ABCC173A905B580595A60F89DF636E49B4C29AEC3C5E8C62BDDF2378F8187CB1020AF2431375E532B754CBDB1ED7782A05C1FD67AC298B0ED2510EDFE43DE173014A33B4E4F01AB31535DF81E20439B0BC380593884F4984F9609289136E3D6603DDB22AF6689AF0611B2C1F9569D2AD69CC6FD19AAFB6008CA34340D1DA2125C4EB16788D681358E326ECEC4460D2857047FAD0B855939DA5E68D5BA17C7F91A5D1CD3F6E0E49E27390C526BA2519BD2BDF23FDFABBD30E3A0724E310536513C4B80CE1E075110077917013E6EB48FE687C2A894D9703D7F8B68015119119A69F25C99C07069B5677ABC0939B6BF54399AE30DFBC2CF4D51F4DCFE2DDFADF
+    (don't forget 0x)
 
+cert0:
+
+extract and hash the contents of the certificate that end up being signed:
+openssl asn1parse -i -in cert_0.pem -strparse 4 -out cert0_body.bin -noout; sha256sum cert0_body.bin
+
+We verify the signature by defining Exponent, Modulus, Signature and the Hash as big integers and performing the computation:
+
+Use 
+
+openssl x509 -in cert_1.pem -noout -text -modulus
+
+to get Modulus, Exponent, and Signature
+
+use 
+
+openssl asn1parse -i -in cert_0.pem -strparse 4 -out cert0_body.bin -noout; sha256sum cert0_body.bin
+
+to get Hash
+
+>>> Modulus=0xA3ABCC173A905B580595A60F89DF636E49B4C29AEC3C5E8C62BDDF2378F8187CB1020AF2431375E532B754CBDB1ED7782A05C1FD67AC298B0ED2510EDFE43DE173014A33B4E4F01AB31535DF81E20439B0BC380593884F4984F9609289136E3D6603DDB22AF6689AF0611B2C1F9569D2AD69CC6FD19AAFB6008CA34340D1DA2125C4EB16788D681358E326ECEC4460D2857047FAD0B855939DA5E68D5BA17C7F91A5D1CD3F6E0E49E27390C526BA2519BD2BDF23FDFABBD30E3A0724E310536513C4B80CE1E075110077917013E6EB48FE687C2A894D9703D7F8B68015119119A69F25C99C07069B5677ABC0939B6BF54399AE30DFBC2CF4D51F4DCFE2DDFADF
 >>> Exponent = 65537
->>> Hash = cf72768e15de5840ff69ea60d1e6d1483e45538f01a621fcbdad0427d214b7b5
->>> Signature = 487f9ecdb25f4678330cbd179ec20c023e99663b1acb7d1f6df4660f9e34ff1548d93a2d8f8df4c276f2c2fe197a9d1bb8436585b112e437764f94e5d850713f8bfaf65e9943fb999877c4c39836dc03ac171aac2a8691d58cbbb17fdc1ffe0cb8d8d1657d7d78765909384d6aecd9911ce7ee56aafa5ccf8a4adf73d0f5a95c941666716411f024f810415f5b040a8dbeb100f6752d29aa84492333e34e5b3c33cb06cf72fe82daed911f7b961987e5f21134d1e44322ffccc861c4813649bfa9c1bab5f3b5ea7a13c48f7d68787c2e03afabf24db19c7878abe9fd01e8719e2a7eec94da7e4a6ddf3ddfc1f6699f3ee12ee96724d7f8f8361255c3199259bf
+>>> Hash = 0xcf72768e15de5840ff69ea60d1e6d1483e45538f01a621fcbdad0427d214b7b5
+>>> Signature = 0x487f9ecdb25f4678330cbd179ec20c023e99663b1acb7d1f6df4660f9e34ff1548d93a2d8f8df4c276f2c2fe197a9d1bb8436585b112e437764f94e5d850713f8bfaf65e9943fb999877c4c39836dc03ac171aac2a8691d58cbbb17fdc1ffe0cb8d8d1657d7d78765909384d6aecd9911ce7ee56aafa5ccf8a4adf73d0f5a95c941666716411f024f810415f5b040a8dbeb100f6752d29aa84492333e34e5b3c33cb06cf72fe82daed911f7b961987e5f21134d1e44322ffccc861c4813649bfa9c1bab5f3b5ea7a13c48f7d68787c2e03afabf24db19c7878abe9fd01e8719e2a7eec94da7e4a6ddf3ddfc1f6699f3ee12ee96724d7f8f8361255c3199259bf
+
+The computation reveals the Hash in the lowest significant bytes of the result (the rest is padding):
+>>> hex(pow(Signature, Exponent, Modulus))
+'0x194dbb6948597111769055b1ce7c4d093f5998a7615f1feed1649f17e21bc1ea727cb9e89e9e44ac05c2bc723ccd02d67ef9b67e498a918357b4f43e0a00ccffb91665c0e54a6aef0b9cd15233c614b928dd2174351531e3fd88bc94d5819bb93dd0735cda66a73c05fd317e10251840f42430863f0610602b8781b774f5341ee56f0377b5607d49fb66207edddba4f8c17558cb3aabf45f8010ef0425055f93e2c477fb2360f70047efb29950c099469c97847659500d75b4b1b4ad5dcdbac32eb39253067aad25649e245376e6f163343244dcd4475121d21cf38679d6d8ce864da3468e7493b4c00d113678751b076f42c186353a3368328887a31c41a302'
 
 
-Continue from here
+cert1:
+
+extract and hash the contents of the certificate that end up being signed:
+openssl asn1parse -i -in cert_1.pem -strparse 4 -out cert1_body.bin -noout; sha256sum cert1_body.bin
+
+We verify the signature by defining Exponent, Modulus, Signature and the Hash as big integers and performing the computation:
+
+openssl x509 -in cert_1.pem -noout -text -modulus
+
+and 
+
+openssl asn1parse -i -in cert_1.pem -strparse 4 -out cert1_body.bin -noout; sha256sum cert1_body.bin
+
+Modulus=0x00ccf710624fa6bb636fed905256c56d277b7a12568af1f4f9d6e7e18fbd95abf260411570db1200fa270ab557385b7db2519371950e6a41945b351bfa7bfabbc5be2430fe56efc4f37d97e314f5144dcba710f216eaab22f031221161699026ba78d9971fe37d66ab75449573c8acffef5d0a8a5943e1acb23a0ff348fcd76b37c163dcde46d6db45fe7d23fd90e851071e51a35fed4946547f2c88c5f4139c97153c03e8a139dc690c32c1af16574c9447427ca2c89c7de6d44d54af4299a8c104c2779cd648e4ce11e02a8099f04370cf3f766bd14c49ab245ec20d82fd46a8ab6c93cc6252427592f89afa5e5eb2b061e51f1fb97f0998e83dfa837f4769a1
+Exponent=65537
+Hash = 0x084440583bb98ad9c8aa908659d92200b66a41500a8abfe115c8fe5e622433d3
+Signature = 0x90f170cb289769977c74fdc0fa267b53abadcd65fdba9c069c8ad75a4387ed4d4c565fadc1c5b505202e59d1ff4af5a02ad8b095adc92e4a3bd7a7f66f8829fc303f2484bbc3b77b93072caf876b7633ed005552b2599ee4b9d0f3dfe70ffeddf8c4b910728109045fcf979e2e32758ecf9a58d257317e370181b2666d291ab166096dd16e90f4b9fa2f0114c55c566401d97d87a838539f8b5d466d5cc6278481d47e8c8ca39b52e7c688ec377c2afbf0555a387210d80013cf4c73dbaa3735a82981699c76bcde187b90d4cacfef6703fd045a2116b1ffea3fdfdc82f5ebf45992230d242a95254ccaa191e6d4b7ac8774b3f16da399dbf9d5bd84409f0798
+
+The computation reveals the Hash in the lowest significant bytes of the result (the rest is padding):
+>>> hex(pow(Signature, Exponent, Modulus))
+'0x4fe098c46bf52df64f3623ef078d745490c9fc780ea6fa5b2aa690c0e5da1eb4a9cba39a5abd091938eec09af34dc4b253c2075e5bbf68486d9900cb22e69e7d046b7f6958b78e08d133bef45124c1db640e28afb49e4f4ef4a073b0aabebc7911cf9b091b1d536a8594980922af2bd9b92f5f4638d67c9145a9e867735390000b2289f06c6180f5533a8b7ff77dfb8f3158c1ef1ebc6a2f8316c9aeee282b0b79289645bf3720463b506ea98d8015a1e212a79a78e0888eb882cc85a9f5523769c0ac29597e6a3ba58cc06398cca5e8bfd057ad87ee292a20be7c6675edcabdc2faa827900b1ee93940b366d5b12856c0f322ce6692ac54bb6c03b4d5ce0915'
 
 
+cert2:
+...
+
+The result should still reveal the Hash in the padding, confirming that cert_2 is validly self-signed (signed by itself).
+
+cert_0 & cert_1 are verified via an external issuer's public key (chain of trust)
+cert_1 is verified using its own public key (self-signed)
+cert_2 is trusted by default because it's pre-installed in certs, not because an external CA signed it
+
+For the self-signed root, you verify using the certificate's own public key, there's no issuer CA above it, 
+and the root is trusted by default due to pre-installation, not verification.
 
 
-
-
-
-Exercise 3
+Exercise 3 - Length Extension Attacks
 
 MAC exercise
 
 When you have a MAC for a message for a shorter block you can calculate for a longer block.
+
+
+Depending on how the hash function is constructed, this allows an adversary to compute a valid MAC 
+for a message M' from the MAC of a message M which is a prefix of M'. This is particularly feasible 
+if the hash function is constructed using the Merkle-Damgård paradigm, but the usage of padding can 
+complicate matters a little bit.
+
+    That's why we need to understand the Merkle-Damgård paradigm, but we won't compute anything
+
+That's why mac.py is already implemented, and it only shows us how a message can be MACed, so we can see it work.
+
+
+python mac.py
+
+(output):
+    length of secret key: 16 bytes
+    message = b'This is a test message.' (23 bytes)
+    tag = a587c96990b5d6ea1ba9dbec664bb7aa0df1a7176a2b87a590f87ae9600d2c30
+
+(think of the adversary doing this):
+
+echo -n "VERY_SECRET_KEY_This is a test message." | sha256sum
+0e3542399804e2ddc76f80c59858f82a41d21280cff7b64ded86edbb0bab191a  -
+
+    How did the adversary get "0e3542399804e2ddc76f80c59858f82a41d21280cff7b64ded86edbb0bab191a" exactly?
+
+(output): 
+    a587c96990b5d6ea1ba9dbec664bb7aa0df1a7176a2b87a590f87ae9600d2c30
+
+By extending the length of the message they got the same tag!
+
+Detailed Explanation
+Real Scenario: User and Adversary
+
+INITIAL SETUP:
+- User has secret key K = 'VERY_SECRET_KEY_' (16 bytes) — adversary does NOT know this
+- User wants to authenticate message M = 'This is a test message.' (23 bytes) — adversary DOES know this
+- User computes tag = SHA256(K || M) and sends/publishes the message + tag
+
+WHAT THE ADVERSARY OBSERVES:
+- The message M in plaintext: 'This is a test message.'
+- The tag: a587c96990b5d6ea1ba9dbec664bb7aa0df1a7176a2b87a590f87ae9600d2c30
+- The adversary DOES NOT see K
+
+THE LENGTH EXTENSION ATTACK:
+
+The adversary doesn't need to compute 0e3542399804e2ddc76f80c59858f82a41d21280cff7b64ded86edbb0bab191a. 
+Here's what they actually do:
+
+1. KNOW THE KEY LENGTHS: Adversary guesses K length = 16 bytes (common)
+   - Total input to hash: 16 + 23 = 39 bytes
+   - This gets padded to 64 bytes (add 0x80, zeros, then 8-byte length field)
+
+2. USE sha256_extend():
+   given_hash = bytes.fromhex('a587c96990b5d6ea1ba9dbec664bb7aa0df1a7176a2b87a590f87ae9600d2c30')
+   prefix_length = 64  # padded size of K || M
+   message_suffix = b'GIVE_ME_ADMIN_ACCESS'  # attacker's new data
+   
+   new_tag = sha256_extend(given_hash, prefix_length, message_suffix)
+
+3. RESULT: new_tag is now a valid MAC for:
+   SHA256(K || M || padding(K||M) || 'GIVE_ME_ADMIN_ACCESS')
+   WITHOUT knowing K!
+
+WHY THE ECHO COMMAND IN README?
+
+That's just for us to verify what the intermediate SHA256 state actually was. It's educational:
+- We know K and M, so we can compute the actual hash of the full padded input
+- We see it matches what we'd get from the length extension attack
+- But the adversary never needs to run that echo command—they work backwards from the observed tag
+
+THE ATTACK IS: "I observed a valid tag. I can extend the message and produce another valid tag 
+for a longer message, all without knowing K."
+
+
+Now we just have to upgrade sha256.py - so we can combat the length extension attack
+
