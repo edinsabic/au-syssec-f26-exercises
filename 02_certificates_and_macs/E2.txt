@@ -1,0 +1,66 @@
+CA = Certificate Authority
+MAC = Message Authentication Code
+
+Exercise 1
+
+General: In cryptography, X.509 is an International Telecommunication Union (ITU) standard defining the format of public key certificates.[1] X.509 certificates are used in many Internet protocols, including TLS/SSL, which is the basis for HTTPS,[2] the secure protocol for browsing the web. They are also used in offline applications, like electronic signatures.[1]
+
+Exercise 2
+
+Use www.instagram.com for the example
+
+root CA: cert_2.pem
+    root CA is self-signed and pre-installed in your system, so it's trusted by default.
+
+intermediate certificates: cert_1.pem
+
+server certificate: cert_0.pem
+
+
+This organization lets you verify the chain step-by-step:
+
+Verify cert_0 using cert_1's public key: The server certificate is signed by the intermediate CA. You extract the public key from cert_1.pem and use it to verify cert_0's signature mathematically.
+Verify cert_1 using cert_2's public key: The intermediate CA's certificate is signed by the root. You extract cert_2's public key and verify cert_1.
+Trust cert_2: The root CA is self-signed and pre-installed in your system, so it's trusted by default.
+    the local trusted storage is here: /etc/ssl/certs
+    it's: /etc/ssl/certs/DigiCert_Global_Root_G2.pem
+        find out which one it is based on the data at the top of
+
+            openssl s_client -connect www.instagram.com:443 -showcerts
+
+        command
+
+        depth=2 C = US, O = DigiCert Inc, OU = www.digicert.com, CN = DigiCert Global Root G2
+        verify return:1
+            depth=1 C = US, O = DigiCert Inc, CN = DigiCert Global G2 TLS RSA SHA256 2020 CA1
+            verify return:1
+            depth=0 C = US, ST = California, L = Menlo Park, O = "Meta Platforms, Inc.", CN = *.www.instagram.com
+            verify return:1
+
+
+This hierarchical structure allows you to verify that the website's certificate genuinely belongs to that domain by tracing back through a chain of trust to a certificate you already trust.
+We do all of this implicitly every time in a browser (when we use HTTPS, and therefore SSL & TLS)
+
+
+8. Run python in interactive mode; just type python & enter
+
+>>> Modulus=A3ABCC173A905B580595A60F89DF636E49B4C29AEC3C5E8C62BDDF2378F8187CB1020AF2431375E532B754CBDB1ED7782A05C1FD67AC298B0ED2510EDFE43DE173014A33B4E4F01AB31535DF81E20439B0BC380593884F4984F9609289136E3D6603DDB22AF6689AF0611B2C1F9569D2AD69CC6FD19AAFB6008CA34340D1DA2125C4EB16788D681358E326ECEC4460D2857047FAD0B855939DA5E68D5BA17C7F91A5D1CD3F6E0E49E27390C526BA2519BD2BDF23FDFABBD30E3A0724E310536513C4B80CE1E075110077917013E6EB48FE687C2A894D9703D7F8B68015119119A69F25C99C07069B5677ABC0939B6BF54399AE30DFBC2CF4D51F4DCFE2DDFADF
+
+>>> Exponent = 65537
+>>> Hash = cf72768e15de5840ff69ea60d1e6d1483e45538f01a621fcbdad0427d214b7b5
+>>> Signature = 487f9ecdb25f4678330cbd179ec20c023e99663b1acb7d1f6df4660f9e34ff1548d93a2d8f8df4c276f2c2fe197a9d1bb8436585b112e437764f94e5d850713f8bfaf65e9943fb999877c4c39836dc03ac171aac2a8691d58cbbb17fdc1ffe0cb8d8d1657d7d78765909384d6aecd9911ce7ee56aafa5ccf8a4adf73d0f5a95c941666716411f024f810415f5b040a8dbeb100f6752d29aa84492333e34e5b3c33cb06cf72fe82daed911f7b961987e5f21134d1e44322ffccc861c4813649bfa9c1bab5f3b5ea7a13c48f7d68787c2e03afabf24db19c7878abe9fd01e8719e2a7eec94da7e4a6ddf3ddfc1f6699f3ee12ee96724d7f8f8361255c3199259bf
+
+
+Continue from here
+
+
+
+
+
+
+
+Exercise 3
+
+MAC exercise
+
+When you have a MAC for a message for a shorter block you can calculate for a longer block.
