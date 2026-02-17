@@ -5,6 +5,7 @@ from Crypto.Util.number import getPrime, GCD, inverse
 def encrypt(m, e, N):
 	return pow(m, e, N)
 
+# Right-to-left version
 def decrypt(c, d, N):
     r = 1
     x = c % N
@@ -15,8 +16,16 @@ def decrypt(c, d, N):
         d >>= 1
     return r
 
-def main(bits, message):
+# Left-to-right version
+def decrypt_ltor(c, d, N):
+    r = 1
+    for i in range(d.bit_length() - 1, -1, -1):
+        r = (r * r) % N
+        if (d >> i) & 1:
+            r = (r * c) % N
+    return r
 
+def main(bits, message):
     # key generation
     while True:
         # sample two different primes
@@ -42,14 +51,16 @@ def main(bits, message):
 
     m = int.from_bytes(message.encode("utf-8"), "big") % N
     enc = encrypt(m, e, N)
+
     dec = decrypt(enc, d, N)
+
     plain = dec.to_bytes((N.bit_length() + 7) // 8, 'big')
     print()
     print(f"RSA ciphertext = {enc}")
     print(f"RSA plaintext = {plain.decode("utf-8")}")
 
     assert dec == m
-
+    assert decrypt(enc, d, N) == decrypt_ltor(enc, d, N)
 
 if __name__ == '__main__':
     if (len(sys.argv) < 3):

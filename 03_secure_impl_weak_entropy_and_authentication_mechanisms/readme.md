@@ -10,6 +10,7 @@ This is the command that I used:
 ```
 $ python encrypt.py plain.txt ciphertext.bin
 ```
+The `time()` function measures the number of seconds since January 1st, 1970 UTC.
 
 ## Exercise 2: Implement RSA without branches
 
@@ -38,10 +39,13 @@ x \cdot \left(x^{y-1}\right), & \text{if } y \text{ is odd}.
 \end{cases}
 $$
 
+For reference, we include two versions of this idea (scanning the exponent from left to right, and from right to left).
+
 ### Tasks
-1. Reformulate the exponentiation algorithm to remove the branches
-2. Find a way to bound the number of iterations of the algorithm
-4. Implement the [Montgomery Ladder](https://en.wikipedia.org/wiki/Exponentiation_by_squaring#Montgomery's_ladder_technique) algorithm.
+1. Reformulate the exponentiation algorithm to remove the branches based on key bits.
+   <br>**Hint**: think of how to use a single bit as a selector between two values.
+3. Find a way to bound the number of iterations of the algorithm
+4. **BONUS**: Implement the [Montgomery Ladder](https://en.wikipedia.org/wiki/Exponentiation_by_squaring#Montgomery's_ladder_technique) algorithm.
 
 ## Exercise 3: Authentication Mechanisms
 
