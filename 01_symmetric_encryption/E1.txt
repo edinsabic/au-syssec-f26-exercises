@@ -1,5 +1,11 @@
     Run the code in a virtual environment:
 
+cd 01...
+python3 -m venv venv
+source venv/bin/activate
+# work
+deactivate
+
 source env/bin/activate
 
     deactivate using
