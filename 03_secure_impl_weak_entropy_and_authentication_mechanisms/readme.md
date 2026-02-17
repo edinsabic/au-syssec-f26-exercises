@@ -44,7 +44,8 @@ For reference, we include two versions of this idea (scanning the exponent from 
 ### Tasks
 1. Reformulate the exponentiation algorithm to remove the branches based on key bits.
    <br>**Hint**: think of how to use a single bit as a selector between two values.
-3. Find a way to bound the number of iterations of the algorithm
+3. Find a way to bound the number of iterations of the algorithm such that it does not leak how long the private exponent is.
+   <br>**Hint**: think of how to use a public parameter to fix a maximum number of iterations.
 4. **BONUS**: Implement the [Montgomery Ladder](https://en.wikipedia.org/wiki/Exponentiation_by_squaring#Montgomery's_ladder_technique) algorithm.
 
 ## Exercise 3: Authentication Mechanisms
