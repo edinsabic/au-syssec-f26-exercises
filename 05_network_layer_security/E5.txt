@@ -1,0 +1,73 @@
+Exercise 1
+
+ifconfig on mitm machine (VM) -> use the 192.168.2.220 IP in the advanced -> proxy settings of Pixel's Wi-Fi
+
+launch mitm and you can observe all the traffic from the phone
+
+    FYI, you'll have "internet" connection on the victim (phone) only when running mitm.
+
+Exercise 2
+
+After logging in on the phone (admin admin) or refreshing, look for the POST, /login/ at 192.168.3.29 and you'll see the username and password (admin admin)
+
+Exercise 3
+
+Paste the public key in one line, in ' ' parenthesis, including BEGIN and END
+
+run
+
+mitmproxy --showhost -s mitm_pk.py
+
+and on the victim (phone) at 192.168.3.29 you can see that the key has changed
+
+(Bonus) Exercise 4
+
+How to get <interface> ?
+
+ifconfig
+enp0s3: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.2.220  netmask 255.255.255.0  broadcast 192.168.2.255
+        inet6 fe80::a00:27ff:fec5:61bf  prefixlen 64  scopeid 0x20<link>
+        ether 08:00:27:c5:61:bf  txqueuelen 1000  (Ethernet)
+        RX packets 44333  bytes 7381757 (7.3 MB)
+        RX errors 363  dropped 0  overruns 0  frame 363
+        TX packets 24835  bytes 2383626 (2.3 MB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10<host>
+        loop  txqueuelen 1000  (Local Loopback)
+        RX packets 40532  bytes 3350763 (3.3 MB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 40532  bytes 3350763 (3.3 MB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+samsepi0l@Ubuntu-24:~/Documents/SS/au-syssec-f26-exercises/05_network_layer_security$ ip link
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+2: enp0s3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP mode DEFAULT group default qlen 1000
+    link/ether 08:00:27:c5:61:bf brd ff:ff:ff:ff:ff:ff
+samsepi0l@Ubuntu-24:~/Documents/SS/au-syssec-f26-exercises/05_network_layer_security$ ip addr show
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host noprefixroute 
+       valid_lft forever preferred_lft forever
+2: enp0s3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 08:00:27:c5:61:bf brd ff:ff:ff:ff:ff:ff
+    inet 192.168.2.220/24 brd 192.168.2.255 scope global dynamic noprefixroute enp0s3
+       valid_lft 38319sec preferred_lft 38319sec
+    inet6 fe80::a00:27ff:fec5:61bf/64 scope link 
+       valid_lft forever preferred_lft forever
+
+
+???
+sudo iptables -A FORWARD --in-interface inet enp0s3 -j ACCEPT
+sudo iptables -t nat -A PREROUTING -i inet enp0s3 -p tcp --dport 80 -j REDIRECT --to-port 8080
+???
+
+(Bonus) Exercise 5
+
+Figure out how to run arp...exe on Windows 11
