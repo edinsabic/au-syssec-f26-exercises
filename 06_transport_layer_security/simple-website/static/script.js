@@ -49,24 +49,6 @@ async function encryptMessage(message, publicKey) {
     return uint8ArrayToHex(new Uint8Array(encryptedData)); // Convert to Hex
 }
 
-document.querySelector("form").addEventListener("submit", async function(event) {
-    event.preventDefault(); // Stop default form submission
-
-    let formData = new FormData(this);
-    let response = await fetch("/upload_secrets", {
-        method: "POST",
-        body: formData
-    });
-
-    // Force browser to navigate if Flask redirects
-    if (response.redirected) {
-        window.location.href = "/thanks";
-    } else {
-        let result = await response.text();
-        document.body.innerHTML = result;  // Render response manually (fallback)
-    }
-});
-
 async function handleFormSubmit(event) {
     event.preventDefault(); // Prevent normal form submission
 
@@ -89,6 +71,14 @@ async function handleFormSubmit(event) {
         body: JSON.stringify({ encrypted: encryptedMessage })
     });
 
+    // Force browser to navigate if Flask redirects
+    if (response.redirected) {
+        window.location.href = "/thanks";
+    } else {
+        let result = await response.text();
+        document.body.innerHTML = result;  // Render response manually (fallback)
+    }
+
     if (response.ok) {
         alert("Message sent securely!");
     } else {
@@ -100,3 +90,4 @@ async function handleFormSubmit(event) {
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("messageForm").addEventListener("submit", handleFormSubmit);
 });
+
