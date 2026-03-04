@@ -1,0 +1,93 @@
+    Run the code in a virtual environment:
+
+cd 01...
+python3 -m venv venv
+source venv/bin/activate
+# work
+deactivate
+
+source env/bin/activate
+
+    deactivate using
+
+deactivate
+
+pip install cryptodome
+
+Exercise 1:
+
+This exercise shows us that having weak entropy - using time() for RNG - makes for an easy way of exploiting encryption
+
+We need to write a decryption/crack script to exploit the weak entropy. 
+We do this by:
+- trying reasonable time values (±24 hours)
+- for each time value, seed the RNG the same way and generate a candidate key
+- attempt decryption using AES-GCM
+- when the authentication tag validates successfully, we've the correct key & plaintext
+
+- we need to encrypt and decrypt within a very close time window
+
+python3 encrypt.py plain.txt ciphertext.bin
+
+python3 decrypt.py ciphertext.bin decrypted.txt
+
+- verify the decryption worked:
+
+diff plain.txt decrypted.txt
+echo "exit code: $?" 
+
+    0 means files are identical
+
+
+Exercise 2
+
+A side-channel attack is a type of security exploit that leverages information inadvertently leaked by a system—such as timing, power consumption, or electromagnetic or acoustic emissions—to gain unauthorized access to sensitive information. These attacks differ from those targeting flaws in the design of cryptographic protocols or algorithms.
+
+Because many algorithms for exponentiation do not provide defence against side-channel attacks, we try to mitigate this here.
+
+RSA for strings 
+We need to implement RSA without branches
+    meaning that we need to reformulate the exponentiation algorithm to replaces branches by a conditional selection operation.
+Branches are the if statements based on key bits.
+
+The problem:
+- When a bit is 1, the code executes one path (multiply by x)
+- When a bit is 0, it skips that path
+- An attacker measuring execution time can infer the key bits
+
+So, we need to refactor the exponentiation algo itself & create a branch-free version that always performs the same operations regardless of the key bits
+- instead of having in if statement evaluating the x^y exponentiation recurrence
+- we need refactor (remove branches based on key bits) by using a single bit as a selector between two values
+    - we do this by not having an if statement and always performing the same operations
+
+Calculate r this way:
+
+r = (1 - bit) * v0 + bit * v1
+    so we eval both sides of the branch and use bit as a selector to choose the correct result, without any branching or timing variations based on key bits. This way, an attacker cannot infer information about the key from how long decryption takes, since it always does the same operations regardless of the key.
+
+This way:
+
+When bit is 0: x^0 = 1, so r = (r * 1) % N = r
+When bit is 1: x^1 = x, so r = (r * x) % N
+Same number of multiplications either way—no timing difference!
+
+Why do we need to Find a way to bound the number of iterations of the algorithm?
+
+As d decreases, the while loop runs fewer iterations. An attacker can measure execution time and deduce how many bits of d are significant, revealing the key length! Then they can refine attacks further.
+
+By using for i in range(d.bit_length()):, you always run exactly the same number of iterations—constant time regardless of the key's bit pattern.
+
+    We need to use for i in range(d.bit_length() - 1, -1, -1) to match the right-to-left version, so we go through LSBs before MSBs.
+
+Montgomery's ladder technique
+popualar technique for providing defence against side-channel attacks.
+
+Again, we need to prevent if statements;
+
+To-do: insert how to calculate r.
+
+
+
+Exercise 3 
+
+Do it at home with your own password manager.
