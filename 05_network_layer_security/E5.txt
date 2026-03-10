@@ -1,6 +1,13 @@
+SYSSEC = 192.168.1.1 (Gateway)
+NETSEC = 192.168.2.1 (Gateway)
+
+Phone connected to 192.168.1.132
+
+website at 192.168.3.29 (server)
+
 Exercise 1
 
-ifconfig on mitm machine (VM) -> use the 192.168.2.220 IP in the advanced -> proxy settings of Pixel's Wi-Fi
+ifconfig on mitm machine (VM) -> use the 192.168.2.220 IP as the proxy (being the VM) ; pixel: Wi-Fi -> advanced -> proxy settings
 
 launch mitm and you can observe all the traffic from the phone
 
@@ -85,15 +92,20 @@ Run: mitmproxy --mode transparent --showhost
 Outcome: HTTP/80 flows are silently redirected to mitmproxy and still forwarded onward.
 
 
+
+Trobule with this one - doesn't work; mitmproxy opens up but nothing gets captured. Diego said he'll have to look into it. Maybe I just set the wrong gateway.
+
+
+
 (Bonus) Exercise 5
 
 arpspoof should be executed on Ubuntu 24.04.3
 
-What is <router> in your setup? 
+What is <router> in your setup? Let's say 192.168.3.45
 
 From the topology in readme.md and file:network-layout.svg, the AP/router sits between Wi‑Fi (192.168.1/2.0) and server net (192.168.3.0).
-Your victim phone is on 192.168.1.x (NETSEC) or 192.168.2.x (SYSSEC); the website 192.168.3.29 is the server, not the router.
-Real router IP = phone’s default gateway (find in phone Wi‑Fi details: Gateway/Router), or confirm from VM with ip route (default via ... dev enp0s3).
+Your victim phone is on 192.168.1.x (SYSSEC) or 192.168.2.x (NETSEC); the website 192.168.3.29 is the server, not the router.
+Real router IP = phone’s default gateway - (SYSSEC) 192.168.1.220 (Gateway), 192.168.2.132 (IP Address), 192.168.21 (find in phone Wi‑Fi details: Gateway/Router), or confirm from VM with ip route (default via ... dev enp0s3).
 For Bonus 5 specifically, the sheet asks you to manually set a gateway IP in 192.168.1.1-69 or 192.168.2.1-69; that chosen IP is the <router> you pass to arpspoof.
 Lab commands (VM path with your interface enp0s3)
 
@@ -104,5 +116,15 @@ sudo iptables -D FORWARD --in-interface enp0s3 -j ACCEPT
 sudo sysctl -w net.ipv4.ip_forward=0
 Then Bonus 5 attack:
 sudo arpspoof -i enp0s3 -t <victim_phone_ip> <router_ip>
+sudo arpspoof -i enp0s3 -t 192.168.2.1 192.168.3.29 (Try to impersonate the Web server by running the ARP spoofing attack inside the VM:)
+
+Choose randomly one address in the IP range 192.168.1.1-69 or 192.168.2.1-69 (depending if you are connected to SYSSEC or NETSEC) and manually configure this address as the gateway in your mobile device.
+
+    192.168.2.45 -> configure in Pixel settings
+
+sudo arpspoof -i enp0s3 -t 192.168.2.45 192.168.3.29
+
 (optional reverse poison for stability) sudo arpspoof -i enp0s3 -t <router_ip> <victim_phone_ip>
 Re-enable forwarding + redirect and run: mitmproxy --mode transparent --showhost
+
+???
