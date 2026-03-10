@@ -1,0 +1,96 @@
+Preliminaries
+
+Connected to SYSSEC: 192.168.1.220 on VM 
+
+	& Pixel: 192.168.1.188
+
+I can ping 192.168.3.29 and open http://192.168.3.29
+
+ifconfig
+enp0s3: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+	inet 192.168.1.220  netmask 255.255.255.0  broadcast 192.168.1.255
+	inet6 fe80::a00:27ff:fec5:61bf  prefixlen 64  scopeid 0x20<link>
+	ether 08:00:27:c5:61:bf  txqueuelen 1000  (Ethernet)
+	RX packets 790  bytes 114178 (114.1 KB)
+	RX errors 0  dropped 0  overruns 0  frame 0
+	TX packets 656  bytes 64647 (64.6 KB)
+	TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+	inet 127.0.0.1  netmask 255.0.0.0
+	inet6 ::1  prefixlen 128  scopeid 0x10<host>
+	loop  txqueuelen 1000  (Local Loopback)
+	RX packets 1259  bytes 96098 (96.0 KB)
+	RX errors 0  dropped 0  overruns 0  frame 0
+	TX packets 1259  bytes 96098 (96.0 KB)
+	TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+Exercise 1
+
+run 
+
+mitmproxy --ssl-insecure --showhost
+
+	manually configure proxy on pixel with VM's IP 192.168.1.220 and 8080
+
+	then it will show traffic, and we can see username & password in login POST
+
+just follow the Exercise
+
+pixel will prevent you from installing the mitm.it cert (can be installed in the settings with developer mode enabled) and it will give warnings for http, but we ignore those for now
+
+Exercise 2
+
+The server could not prove that it is 192.168.3.29; its security certificate is not trusted by your device's OS.
+	Makes sense, as we didn't install the cert.
+
+On the Pixel:
+
+Encryption & credentials -> Install a certificate -> CA certificate -> Install anyway -> select the downloaded .pem file
+
+Now we can open https://192.168.3.29 :)
+
+Exercise 3
+
+ifconfig
+enp0s3: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+	inet 192.168.1.220  netmask 255.255.255.0  broadcast 192.168.1.255
+	inet6 fe80::a00:27ff:fec5:61bf  prefixlen 64  scopeid 0x20<link>
+	ether 08:00:27:c5:61:bf  txqueuelen 1000  (Ethernet)
+	RX packets 21343  bytes 4722991 (4.7 MB)
+	RX errors 439  dropped 0  overruns 0  frame 439
+	TX packets 10822  bytes 1584480 (1.5 MB)
+	TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+    inet 127.0.0.1  netmask 255.0.0.0
+	inet6 ::1  prefixlen 128  scopeid 0x10<host>
+	loop  txqueuelen 1000  (Local Loopback)
+	RX packets 14081  bytes 1114045 (1.1 MB)
+	RX errors 0  dropped 0  overruns 0  frame 0
+	TX packets 14081  bytes 1114045 (1.1 MB)
+	TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+<interface> : enp0s3
+
+
+On Pixel:
+
+SYSSEC/NETSEC advanced settings -> set proxy to none, IP settings to Static, set pixel IP Address to 192.168.1.188 and Gateway to 192.168.1.220 - this way the proxy will serve as the gateway (the VM that we get in ifconfig !!!) -> save ... also observe that the Subnet (network) mask is already set as 255.255.255.0
+
+sudo sysctl -w net.ipv4.ip_forward=1
+sudo sysctl -w net.ipv4.conf.all.send_redirects=0
+
+sudo iptables -A FORWARD --in-interface enp0s3 -j ACCEPT
+sudo iptables -t nat -A PREROUTING -i enp0s3 -p tcp --dport 80 -j REDIRECT --to-port 8080
+sudo iptables -t nat -A PREROUTING -i enp0s3 -p tcp --dport 443 -j REDIRECT --to-port 8080
+
+mitmproxy --ssl-insecure --mode transparent --showhost
+
+Login with username and password on Pixel
+
+I saw flows in mitmproxy, but the site didn't open on my pixel ... I should have saw username and password in a POST line
+
+
+Bonus exercise
+
