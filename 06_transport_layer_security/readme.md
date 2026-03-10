@@ -59,8 +59,10 @@ This will remove any warnings about untrusted self-signed certificates for any o
 
 ## Exercise 3: Malicious-in-the-middle against HTTPS in transparent mode
 
-Change the network configuration of your *victim* device manually to remove the proxy and customize the router. On Android, this means changing the `IP Settings` to `Static`.
+Change the network configuration of your *victim* device manually to _remove_ the proxy and customize the router. On Android, this means changing the `IP Settings` to `Static`.
 Use the same `192.168.1/2.X` as before as the IP address, `192.168.1/2.Z` as the Gateway/DNS and `255.255.255.0` as the network mask.
+
+**Observation**: If you are not running the VM or a Linux environment, you need to translate the configuration below to your own setup. Check [the hints](hints.md) for the latest notes on how to achieve that.
 
 In the VM, let's change the configuration for traffic to be forwarded.
 The following configurations need to be performed to enable IP forwarding such that the VM can forward IPv4 traffic while avoiding ICMP redirects:
