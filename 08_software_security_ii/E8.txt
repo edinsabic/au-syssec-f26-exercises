@@ -1,0 +1,46 @@
+1 - Finding ROP Gadgets
+
+We need a subset of ret-ending snippets, pasted from objdump.text
+
+In ROP, a “useful gadget” is usually a short sequence (often 1–4 instructions) ending in ret that helps set registers or trigger syscall.
+Most plain function endings like pop rbp; ret or just ret are low-value unless you explicitly need that effect.
+
+From my dump, the intentionally useful ones are around 0x4013a4 (read_from_stdin sequence) and 0x4013b3 (prepare_print_file sequence), plus short tails like 0x4013e2 (mov rax, rsi; ret) and 0x4013e6 (mov rax, rdx; ret).
+
+A good Etherpad entry is a curated list of unique, useful gadgets with address + mnemonic sequence, not every ret in the binary.
+
+2 - Composing a ROP Chain
+
+The goal is to spawn a shell within a shell, using the execve syscall.
+
+We did this by editing the registers (rax, rdi, rsi, rdx) in the exploit.py and then running it. It successfully spawns a shell.
+
+Run in venv: 
+$ make -B rop_me && python3 exploit.py
+
+3 - Implementing the Exploit
+
+The cat trick keeps stdin open so you can type shell commands after payload delivery.
+
+Run in venv: 
+$ (python exploit_remote.py; cat) | nc rop.syssec.dk 1337
+    then type: cat flag.txt
+
+4 - Bonus: ROP under system defenses (PIE)
+
+Changed Makefile flags from -no-pie to -fPIE -pie.
+
+What is -fPIE? It compiles the code as position-independent, meaning it can be loaded at any address in memory. This is a common security feature to prevent certain types of attacks.
+
+Difference:
+- Code addresses are no longer fixed (ASLR + PIE randomizes base each run).
+- Hardcoded gadget addresses from non-PIE exploit fail.
+
+Still exploitable:
+- The program leaks runtime addresses in its intro (e.g., "/bin/sh" address).
+- With known static offset of "/bin/sh" (0x2012), compute PIE base:
+    pie_base = leaked_bin_sh - 0x2012
+- Then compute each gadget/runtime symbol with base + offset.
+
+Run in venv:
+$ make -B rop_me_pie && python3 exploit_pie.py
