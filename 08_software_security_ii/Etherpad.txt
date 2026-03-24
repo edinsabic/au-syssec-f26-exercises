@@ -1,0 +1,146 @@
+This is a copy of the shared Etherpad document.
+
+*Instructions
+    - use `objdump -M intel -d rop_me` to disassemble the binary
+    - look for ROP gadgets, i.e., sequences of instructions ending with `ret`
+    - copy gadgets you found and paste them into this document below the line
+    - remember to include the address of the gadget
+    
+
+*Example:
+*
+*  40112d:        5d                           pop    rbp
+*  40112e:        c3                           ret
+
+---------------------------------------------------------------------------------
+
+<_init>:
+401016:        48 83 c4 08           add    rsp,0x8
+40101a:        c3                           ret
+
+<__do_global_dtors_aux>:
+40112d:       5d                          pop    rbp
+40112e:       c3                           ret
+
+<matrix_read>:
+401180:       48 8b 00           mov    rax,QWORD PTR [rax]
+401183:       5d                      pop    rbp
+401184:       c3                      ret
+
+STEP 1: <__libc_csu_init>: (cleaning the stack)
+
+      40144a: 5b                           pop     rbx
+
+      40144b: 5d                           pop     rbp
+
+      40144c: 41 5c                       pop     r12
+
+      40144e: 41 5d                       pop     r13
+
+      401450: 41 5e                       pop     r14
+
+      401452: 41 5f                        pop     r15
+
+      401454: c3                            ret
+
+
+<not_equal>:
+4013e6: 48 89 d0                 mov     rax, rdx
+4013e9: c3                            ret
+
+<if_then_else>:
+4013e2: 48 89 f0                  mov     rax, rsi
+4013e5: c3                            ret
+
+4013e6:       48 89 d0                mov    rax,rdx
+4013e9:       c3                      ret
+
+<prepare_print_file>:
+4013c3:       48 89 fa            mov    rdx,rdi
+4013c6:       48 ff c7             inc    rdi
+4013c9:       c3                      ret
+
+STEP4:  00000000004013ca <print_file>: 
+
+       4013cf:    0f 05                    syscall
+
+       4013d1:    c3                       ret
+
+
+STEP3; <get_mysterious_number>:
+
+     401216:       55                      push   rbp
+
+     401217:       48 89 e5                mov    rbp,rsp
+
+     40121a:       b8 58 c3 00 00          mov    eax,0xc358
+
+     40121f:       5d                      pop    rbp
+
+     401220:       c3                      ret
+
+
+Load value pointed to by (rbp)-30 into rax and make rdx point to it <-- this writes rax into the address in rdx
+  4011c3:       48 8b 45 d0             mov    rax,QWORD PTR [rbp-0x30]
+  4011c7:       48 89 02                mov    QWORD PTR [rdx],rax
+  4011ca:       90                      nop
+  4011cb:       5d                      pop    rbp
+  4011cc:       c3                      ret
+
+STEP 2: Pop value into rdi (make sure rax contains same value)
+
+    4013da:       5a                      pop    rdx
+
+    4013db:       5e                      pop    rsi
+
+    4013dc:       5f                      pop    rdi
+
+    4013dd:       48 39 c7                cmp    rdi,rax
+
+    4013e0:       75 04                   jne    4013e6 <not_equal>
+
+    4013e2:       48 89 f0                mov    rax,rsi
+
+    4013e5:       c3                      ret
+
+  
+  4013e6:       48 89 d0                mov    rax,rdx
+  4013e9:       c3                      ret
+  
+  401179:       48 8b 45 f8             mov    rax,QWORD PTR [rbp-0x8]
+  40117d:       48 01 d0                add    rax,rdx
+  401180:       48 8b 00                mov    rax,QWORD PTR [rax]
+  401183:       5d                      pop    rbp
+  401184:       c3                      ret
+
+<exit_process>: // we can use this to safely exit
+401398:    48 c7 c7 3c 00 00 00     mov    rdi,0x3c
+40139f:    48 89 f8                 mov    rax,rdi
+4013a2:    0f 05                    syscall  
+
+This one is a good example of a gadget without return (indirect jump):
+4010be:       ff e0                  jmp    rax
+4010c0:       c3                      ret
+
+4013c6:        48 ff c7                     inc    %rdi
+  4013c9:        c3                           ret
+  
+
+
+Hello friends :)
+Hello 
+How are we doing? 
+Not much - feeling like inspector gadget. <-- you get a nanopoint for humor.
+LMAO 
+Anyone wants to become friends? :) 
+do you like cats? if yes we can
+I do like cats! 
+I like cats as well!
+so many new friends; tuxedo or orange?
+I'll say gray
+jail. <- :( I had a gray cat though, I'm biased
+All cats, as long as it is a cat, I like it :) <- only correct answer
+We hate dog lovers
+hate is a strong word...
+
+    `cat world_domination.txt`
