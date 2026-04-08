@@ -1,0 +1,270 @@
+Exercise 1 - classes of vulnerabilities
+
+https://www.cve.org/CVERecord?id=CVE-2026-35385
+https://www.cvedetails.com/cve/CVE-2026-35385/
+
+Log4shell
+https://www.cve.org/CVERecord?id=CVE-2022-0070
+
+Exercise 2 - using sanatizers
+
+Exercise 2.1 - AddressSanitizer (ASan)
+
+Executing ./address crashes without the detailed ASan output, but ./address_asan gives a reason for the crash and aborts the program before asking you if you like pointers: 
+
+*** buffer overflow detected ***: terminated
+Aborted (core dumped)
+
+this is good, because the sanatizer detects the buffer overflow and prevents the program from executing further, which could lead to more severe consequences
+
+Exercise 2.2 - ThreadSanitizer (TSan)
+
+First make both thread and thread_tsan, then run them multiple times to see the difference in output. The thread program may give different results each time due to the race condition, while the thread_tsan program will consistently report the same number of primes and also provide warnings about the race condition and the unlocked mutex.
+
+$ make thread thread_tsan
+gcc -pthread -o thread -g -O3 -w thread.c
+gcc -fsanitize=thread -pthread -o thread_tsan -g -O3 -w thread.c
+$ ./thread 10000 40
+there are 1229 primes up to 10000
+$ ./thread 10000 40
+there are 1229 primes up to 10000
+$ ./thread 10000 40
+there are 1229 primes up to 10000
+$ ./thread 10000 40
+there are 1229 primes up to 10000
+$ ./thread 10000 40
+there are 1229 primes up to 10000
+$ ./thread 10000 40
+there are 1221 primes up to 10000
+$ ./thread 10000 40
+there are 1229 primes up to 10000
+$ ./thread 10000 40
+there are 1229 primes up to 10000
+$ ./thread 10000 40
+there are 1229 primes up to 10000
+$ ./thread 10000 40
+there are 1226 primes up to 10000
+$ ./thread 10000 40
+there are 1229 primes up to 10000
+$ ./thread 10000 40
+there are 1223 primes up to 10000
+$ ./thread_asan 10000 40
+bash: ./thread_asan: No such file or directory
+$ ./thread_tsan 10000 40
+FATAL: ThreadSanitizer: unexpected memory mapping 0x5aadd71bf000-0x5aadd71c0000
+$ ./thread_tsan 10000 40
+FATAL: ThreadSanitizer: unexpected memory mapping 0x6536bcae6000-0x6536bcae7000
+$ ./thread_tsan 10000 40
+==================
+WARNING: ThreadSanitizer: unlock of an unlocked mutex (or by a wrong thread) (pid=26271)
+    #0 pthread_mutex_unlock ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:1375 (libtsan.so.2+0x57063) (BuildId: 2a13a7710e361d06f7babbea53065ca2be93f738)
+    #1 main /home/samsepi0l/Documents/SS/au-syssec-f26-exercises/09_software_security_iii/thread.c:61 (thread_tsan+0x1394) (BuildId: 5aed6ec47bb5e5ca2456c93ecf7c0a0f7b6b7dd1)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x1e880)
+
+  Mutex M0 (0x7fff1c751880) created at:
+    #0 pthread_mutex_init ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:1315 (libtsan.so.2+0x594cd) (BuildId: 2a13a7710e361d06f7babbea53065ca2be93f738)
+    #1 main /home/samsepi0l/Documents/SS/au-syssec-f26-exercises/09_software_security_iii/thread.c:60 (thread_tsan+0x138c) (BuildId: 5aed6ec47bb5e5ca2456c93ecf7c0a0f7b6b7dd1)
+
+SUMMARY: ThreadSanitizer: unlock of an unlocked mutex (or by a wrong thread) /home/samsepi0l/Documents/SS/au-syssec-f26-exercises/09_software_security_iii/thread.c:61 in main
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=26271)
+  Read of size 8 at 0x7fff1c751878 by thread T3:
+    #0 thread_function /home/samsepi0l/Documents/SS/au-syssec-f26-exercises/09_software_security_iii/thread.c:33 (thread_tsan+0x16d9) (BuildId: 5aed6ec47bb5e5ca2456c93ecf7c0a0f7b6b7dd1)
+
+  Previous write of size 8 at 0x7fff1c751878 by thread T2 (mutexes: write M0):
+    #0 thread_function /home/samsepi0l/Documents/SS/au-syssec-f26-exercises/09_software_security_iii/thread.c:36 (thread_tsan+0x1706) (BuildId: 5aed6ec47bb5e5ca2456c93ecf7c0a0f7b6b7dd1)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x1e878)
+
+  Mutex M0 (0x7fff1c751880) created at:
+    #0 pthread_mutex_init ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:1315 (libtsan.so.2+0x594cd) (BuildId: 2a13a7710e361d06f7babbea53065ca2be93f738)
+    #1 main /home/samsepi0l/Documents/SS/au-syssec-f26-exercises/09_software_security_iii/thread.c:60 (thread_tsan+0x138c) (BuildId: 5aed6ec47bb5e5ca2456c93ecf7c0a0f7b6b7dd1)
+
+  Thread T3 (tid=26275, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:1022 (libtsan.so.2+0x5ac1a) (BuildId: 2a13a7710e361d06f7babbea53065ca2be93f738)
+    #1 main /home/samsepi0l/Documents/SS/au-syssec-f26-exercises/09_software_security_iii/thread.c:69 (thread_tsan+0x140e) (BuildId: 5aed6ec47bb5e5ca2456c93ecf7c0a0f7b6b7dd1)
+
+  Thread T2 (tid=26274, finished) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:1022 (libtsan.so.2+0x5ac1a) (BuildId: 2a13a7710e361d06f7babbea53065ca2be93f738)
+    #1 main /home/samsepi0l/Documents/SS/au-syssec-f26-exercises/09_software_security_iii/thread.c:69 (thread_tsan+0x140e) (BuildId: 5aed6ec47bb5e5ca2456c93ecf7c0a0f7b6b7dd1)
+
+SUMMARY: ThreadSanitizer: data race /home/samsepi0l/Documents/SS/au-syssec-f26-exercises/09_software_security_iii/thread.c:33 in thread_function
+==================
+there are 1229 primes up to 10000
+ThreadSanitizer: reported 2 warnings
+
+As we can see, the TSan output shows that there is a data race in the thread_function, where one thread is reading from a variable while another thread is writing to it without proper synchronization. Additionally, there is a warning about unlocking an unlocked mutex, which indicates that there may be a bug in the code where a mutex is being unlocked without being locked first. These issues can lead to unpredictable behavior and potential security vulnerabilities in the program.
+
+Exercise 2.3 - UndefinedBehaviorSanitizer (UBSan)
+
+$  ./undefined 36 6
+36
+6
+no overflow happened :)
+42
+success
+p = 0x7ffc03878d41
+s = 328350
+
+No errors are reported and the program executes successfully.
+
+$ ./undefined_ubsan 36 6
+36
+6
+no overflow happened :)
+42
+undefined.c:45:23: runtime error: load of misaligned address 0x7ffe728d5851 for type 'uint32_t', which requires 4 byte alignment
+0x7ffe728d5851: note: pointer points here
+ 70 00 00  80 00 00 00 00 01 00 00  00 02 00 00 00 03 00 00  00 04 00 00 00 05 00 00  00 06 00 00 00
+              ^ 
+undefined.c:45:33: runtime error: load of misaligned address 0x7ffe728d5851 for type 'uint32_t', which requires 4 byte alignment
+0x7ffe728d5851: note: pointer points here
+ 7f 00 00  80 00 00 00 00 01 00 00  00 02 00 00 00 03 00 00  00 04 00 00 00 05 00 00  00 06 00 00 00
+              ^ 
+undefined.c:45:17: runtime error: store to misaligned address 0x7ffe728d5851 for type 'uint32_t', which requires 4 byte alignment
+0x7ffe728d5851: note: pointer points here
+ 7f 00 00  80 00 00 00 00 01 00 00  00 02 00 00 00 03 00 00  00 04 00 00 00 05 00 00  00 06 00 00 00
+              ^ 
+success
+p = 0x7ffe728d5851
+undefined.c:35:15: runtime error: load of misaligned address 0x7ffe728d5851 for type 'uint32_t', which requires 4 byte alignment
+0x7ffe728d5851: note: pointer points here
+ 7f 00 00  80 00 00 00 00 01 00 00  00 04 00 00 00 09 00 00  00 10 00 00 00 19 00 00  00 24 00 00 00
+              ^ 
+s = 328350
+
+As we can see, the UBSan output shows that there are multiple runtime errors related to misaligned memory access. The program is trying to load and store data at an address that is not properly aligned for the type being accessed, which can lead to undefined behavior. This is a critical issue that can cause crashes or security vulnerabilities in the program, and it should be addressed by ensuring that all memory accesses are properly aligned.
+
+Undefined behavior can occur when a C program violates a rule given by the C language standard and the standard does not specify what should happen in this cases. Then the compiler as allowed to do as it pleases. This can be used to generate faster code: The compiler is allowed to assume that certain invalid things do not happen and can then optimize the code based on these assumptions:
+
+    this means that if the program does something that is undefined behavior, the compiler can generate code that behaves in unexpected ways, which can lead to security vulnerabilities. For example, if a program has a buffer overflow vulnerability, the compiler may optimize the code in a way that allows an attacker to exploit this vulnerability and execute arbitrary code on the system. Therefore, it is important for developers to be aware of undefined behavior and to write code that adheres to the C language standard to avoid potential security issues.
+
+
+Exercise 3 - fuzzing
+
+1. Fuzz random_password
+
+cd /home/samsepi0l/Documents/SS/au-syssec-f26-exercises/09_software_security_iii/random_password
+make clean
+afl-cc -Wall -Wextra -m32 -no-pie -Wl,-z,norelro -o random_password random_password.c
+mkdir -p in out_afl && printf 'alice\nsecret\n' > in/seed1 && printf 'bob\npassword\n' > in/seed2
+afl-showmap -o /tmp/rp.map -- ./random_password < in/seed1
+AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 afl-fuzz -i in -o out_afl -- ./random_password
+
+ AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 afl-fuzz -i in -o out_afl -- ./random_password
+[+] Enabled environment variable AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES with value 1
+afl-fuzz++4.09c based on afl by Michal Zalewski and a large online community
+[+] AFL++ is maintained by Marc "van Hauser" Heuse, Dominik Maier, Andrea Fioraldi and Heiko "hexcoder" Eißfeldt
+[+] AFL++ is open source, get it at https://github.com/AFLplusplus/AFLplusplus
+[+] NOTE: AFL++ >= v3 has changed defaults and behaviours - see README.md
+[+] No -M/-S set, autoconfiguring for "-S default"
+[*] Getting to work...
+[+] Using exponential power schedule (FAST)
+[+] Enabled testcache with 50 MB
+[+] Generating fuzz data with a length of min=1 max=1048576
+[*] Checking core_pattern...
+
+[-] Hmm, your system is configured to send core dump notifications to an
+    external utility. This will cause issues: there will be an extended delay
+    between stumbling upon a crash and having this information relayed to the
+    fuzzer via the standard waitpid() API.
+    If you're just testing, set 'AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1'.
+
+    To avoid having crashes misinterpreted as timeouts, please log in as root
+    and temporarily modify /proc/sys/kernel/core_pattern, like so:
+
+    echo core >/proc/sys/kernel/core_pattern
+[!] WARNING: Could not check CPU scaling governor
+[+] You have 4 CPU cores and 5 runnable tasks (utilization: 125%).
+[*] Setting up output directories...
+[*] Checking CPU core loadout...
+[+] Found a free CPU core, try binding to #0.
+[*] Scanning 'in'...
+[+] Loaded a total of 2 seeds.
+[*] Creating hard links for all input files...
+[*] Validating target binary...
+[*] Spinning up the fork server...
+[+] All right - fork server is up.
+[*] Target map size: 16
+[*] No auto-generated dictionary tokens to reuse.
+[*] Attempting dry run with 'id:000000,time:0,execs:0,orig:seed1'...
+    len = 13, map size = 5, exec speed = 516 us, hash = c403c6594a70c854
+[*] Attempting dry run with 'id:000001,time:0,execs:0,orig:seed2'...
+    len = 13, map size = 5, exec speed = 487 us, hash = c403c6594a70c854
+[!] WARNING: No new instrumentation output, test case may be useless.
+[+] All test cases processed.
+[!] WARNING: Some test cases look useless. Consider using a smaller set.
+[+] Here are some useful stats:
+
+    Test case count : 1 favored, 0 variable, 1 ignored, 2 total
+       Bitmap range : 5 to 5 bits (average: 5.00 bits)
+        Exec timing : 516 to 516 us (average: 502 us)
+
+[*] No -t option specified, so I'll use an exec timeout of 20 ms.
+[+] All set and ready to roll!
+
+
+        american fuzzy lop ++4.09c {default} (./random_password) [fast]
+┌─ process timing ────────────────────────────────────┬─ overall results ────┐
+│        run time : 0 days, 0 hrs, 9 min, 55 sec      │  cycles done : 225   │
+│   last new find : 0 days, 0 hrs, 9 min, 55 sec      │ corpus count : 4     │
+│last saved crash : 0 days, 0 hrs, 9 min, 54 sec      │saved crashes : 2     │
+│ last saved hang : none seen yet                     │  saved hangs : 0     │
+├─ cycle progress ─────────────────────┬─ map coverage┴──────────────────────┤
+│  now processing : 0.959 (0.0%)       │    map density : 31.25% / 43.75%    │
+│  runs timed out : 0 (0.00%)          │ count coverage : 55.86 bits/tuple   │
+├─ stage progress ─────────────────────┼─ findings in depth ─────────────────┤
+│  now trying : havoc                  │ favored items : 3 (75.00%)          │
+│ stage execs : 29/459 (6.32%)         │  new edges on : 3 (75.00%)          │
+│ total execs : 485k                   │ total crashes : 3 (2 saved)         │
+│  exec speed : 1392/sec               │  total tmouts : 10.7k (0 saved)     │
+├─ fuzzing strategy yields ────────────┴─────────────┬─ item geometry ───────┤
+│   bit flips : disabled (default, enable with -D)   │    levels : 2         │
+│  byte flips : disabled (default, enable with -D)   │   pending : 0         │
+│ arithmetics : disabled (default, enable with -D)   │  pend fav : 0         │
+│  known ints : disabled (default, enable with -D)   │ own finds : 2         │
+│  dictionary : n/a                                  │  imported : 0         │
+│havoc/splice : 1/484k, 3/1047                       │ stability : 100.00%   │
+│py/custom/rq : unused, unused, unused, unused       ├───────────────────────┘
+│    trim/eff : 47.83%/5, disabled                   │          [cpu000:325%]
+└─ strategy: explore ────────── state: finished... ──┘
+
+
+ls -lah out_afl/default/crashes
+CRASH="$(find out_afl/default/crashes -type f -name 'id:*' | head -n 1)" [ -n "$CRASH" ] && ./random_password < "$CRASH"
+
+total 20K
+drwx------ 2 samsepi0l samsepi0l 4.0K Apr  7 11:20 .
+drwx------ 6 samsepi0l samsepi0l 4.0K Apr  7 11:31 ..
+-rw------- 1 samsepi0l samsepi0l   74 Apr  7 11:20 id:000000,sig:11,src:000000+000001,time:386,execs:326,op:splice,rep:13
+-rw------- 1 samsepi0l samsepi0l    5 Apr  7 11:20 id:000001,sig:11,src:000000+000002,time:1128,execs:1554,op:splice,rep:2
+-rw------- 1 samsepi0l samsepi0l  539 Apr  7 11:20 README.txt
+
+AFL++ successfully found 2 crashing input. The key takeaway is:
+- The target is exploitable by malformed input.
+- Crashes are reproducible and saved.
+- You now need to replay at least one crash and document it.
+
+1a. Check crashes + reproduce the errors
+
+CRASH="out_afl/default/crashes/id:000000,sig:11,src:000000+000001,time:386,execs:326,op:splice,rep:13"
+./random_password < "$CRASH"
+
+What's your name?
+Hello Please enter the password
+Sorry, wrong password!
+Segmentation fault (core dumped)
+
+2. Fuzz broken_register
+
+Same steps as before, but with the broken_register program.
+
+2a. Check crashes + reproduce the errors
+
+Same steps as before, but with the broken_register program.

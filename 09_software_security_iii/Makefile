@@ -9,6 +9,9 @@ all: address address_asan thread thread_tsan undefined undefined_ubsan
 %: %.c
 	$(CC) -o $@ $(CFLAGS) $^
 
+address: address.c
+	$(CC) -o address -g address.c
+
 address_asan: address.c
 	$(CC) -fsanitize=address -o $@ $(CFLAGS) $^
 
