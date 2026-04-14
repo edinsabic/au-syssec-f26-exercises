@@ -69,7 +69,7 @@ In this task, we use an experiment to observe the effect caused by an out-of-ord
 The code in [out-of-order.c](out-of-order.c) uses the FLUSH+RELOAD functions from before. As discussed in class, the Spectre exploit works as in the following:
 
 1. Train the CPU to predict a branch to be taken in speculative execution
-2. Once the CPU is trained, evict a variable from memory to start a transient window
+2. Once the CPU is trained, evict a variable from cache memory to start a transient window
 3. Perform an invalid memory access within the transient window to force the CPU to speculatively read the value
 
 **Your task**: Compile the code and run it to observe when the read inside `victim` is executed or not.
