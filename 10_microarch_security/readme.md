@@ -7,6 +7,13 @@ sensitive data.
 This exercise is heavily
 inspired by [SEED Labs](https://seedsecuritylabs.org/Labs_20.04/System/Spectre_Attack/).
 
+## Preliminaries
+
+Operating systems have implemented different strategies to patch microarchitectural security updates, like permanent firmware updates or hotpatching CPU microcode.
+Before you start, use this [script](https://github.com/speed47/spectre-meltdown-checker/blob/master/spectre-meltdown-checker.sh) to discover how vulnerable your current environment is.
+That will dictate if some of the vulnerabilities below are exploitable, such as Spectre.
+The instructor will also provide an alternative environment with unpatched vulnerabilities to facilitate the exercise.
+
 ## Exercise 1: Cache-based side-channel attacks
 
 The CPU cache is a hardware component that reduces the
@@ -41,7 +48,7 @@ This action causes the corresponding array element to be cached.
 element’s loading time is fast, it is very likely that element is already in the cache. This element must
 be the one accessed by the victim function. Therefore, we can figure out what the secret value is.
 
-This vode in [flush-reload.c](flush-reload.c) uses this technique to find out a one-byte secret value contained in the variable `secret`.
+The code in [flush-reload.c](flush-reload.c) uses this technique to find out a one-byte secret value contained in the variable `secret`.
 Since there are 256 possible values for a one-byte secret, we need to map each value to an array element. The naive way is to define an array of 256 elements (i.e., `array[256]`).
 However, this does not work: if `array[k]` is accessed, a block of memory containing this element will be cached. Therefore, the adjacent elements of `array[k]` will also be cached, making it difficult to infer what the secret is. To solve this problem, we create an array of `256*4096` bytes. Each element used in our RELOAD step is `array[k*4096]`. Because
 `4096` is larger than a typical cache block size (64 bytes), no two different elements `array[i*4096]` and
@@ -62,11 +69,11 @@ In this task, we use an experiment to observe the effect caused by an out-of-ord
 The code in [out-of-order.c](out-of-order.c) uses the FLUSH+RELOAD functions from before. As discussed in class, the Spectre exploit works as in the following:
 
 1. Train the CPU to predict a branch to be taken in speculative execution
-2. Once the CPU is trained, evict a variable from memory to start a transient window
+2. Once the CPU is trained, evict a variable from cache memory to start a transient window
 3. Perform an invalid memory access within the transient window to force the CPU to speculatively read the value
 
-**Your task**: Compile the code and run it to observe when line 58 is executed or not.
-Please also comment line 55 and execute again, and think about what you observe.
+**Your task**: Compile the code and run it to observe when the read inside `victim` is executed or not.
+Please also comment line 30 and execute again, and think about what you observe.
 After you are done with this experiment, uncomment it, so the subsequent tasks are not affected.
 
 ## Exercise 4: The Spectre Attack
