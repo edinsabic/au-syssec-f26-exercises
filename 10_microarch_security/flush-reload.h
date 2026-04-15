@@ -4,8 +4,11 @@ void flushSideChannel() {
 	for (i = 0; i < 256; i++)
 		array[i * 4096 + DELTA] = 1;
 	// Flush the values of the array from cache
-	for (i = 0; i < 256; i++)
+	for (i = 0; i < 256; i++) {
 		_mm_clflush(&array[i * 4096 + DELTA]);
+	}
+	// Add full memory fence to ensure all flushes complete
+	_mm_mfence();
 }
 
 void reloadSideChannel() {

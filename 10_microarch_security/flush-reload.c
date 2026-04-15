@@ -2,6 +2,7 @@
 #include <x86intrin.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <unistd.h>
 
 uint8_t array[256 * 4096];
 int temp;

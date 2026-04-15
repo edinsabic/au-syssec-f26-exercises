@@ -1,0 +1,99 @@
+Preliminaries
+
+CVE-2023-20569 aka 'Inception, return address security (RAS)'
+* Mitigated according to the /sys interface:  NO  (Vulnerable: Safe RET, no microcode)
+* Kernel supports mitigation:  YES  (found spec_rstack_overflow in kernel image)
+* Kernel compiled with SRSO support:  YES 
+* Kernel has accurate SRSO reporting:  YES 
+* Kernel compiled with IBPB_ENTRY support:  YES 
+* CPU supports SBPB:  UNKNOWN  (cannot write MSR, rerun with --allow-msr-write)
+> STATUS:  VULNERABLE  (Vulnerable: Safe RET, no microcode)
+
+CVE-2023-23583 aka 'Reptar, redundant prefix issue'
+> STATUS:  NOT VULNERABLE  (your CPU vendor reported your CPU model as not affected)
+
+CVE-2024-36350 aka 'Transient Scheduler Attack - Store Queue (TSA-SQ)'
+* Mitigated according to the /sys interface:  NO  (Vulnerable: No microcode)
+* This system is a host running a hypervisor:  NO 
+* Kernel supports TSA mitigation:  YES  (found TSA mitigation message in kernel image)
+* CPU explicitly indicates not vulnerable to TSA-SQ (TSA_SQ_NO):  NO 
+* Microcode supports VERW buffer clearing:  NO 
+* Hyper-Threading (SMT) is enabled:  NO 
+> STATUS:  VULNERABLE  (Vulnerable: No microcode)
+
+CVE-2024-36357 aka 'Transient Scheduler Attack - L1 (TSA-L1)'
+* Mitigated according to the /sys interface:  NO  (Vulnerable: No microcode)
+* This system is a host running a hypervisor:  NO 
+* Kernel supports TSA mitigation:  YES  (found TSA mitigation message in kernel image)
+* CPU explicitly indicates not vulnerable to TSA-L1 (TSA_L1_NO):  NO 
+* Microcode supports VERW buffer clearing:  NO 
+> STATUS:  VULNERABLE  (Vulnerable: No microcode)
+
+CVE-2024-28956 aka 'Indirect Target Selection (ITS)'
+* Mitigated according to the /sys interface:  YES  (Not affected)
+* Kernel supports ITS mitigation:  YES  (found indirect_target_selection in kernel image)
+* CPU explicitly indicates not being affected by ITS (ITS_NO):  NO 
+> STATUS:  NOT VULNERABLE  (your CPU vendor reported your CPU model as not affected)
+
+CVE-2025-40300 aka 'VMScape, VM-exit stale branch prediction'
+* Mitigated according to the /sys interface:  YES  (Not affected)
+* This system is a host running a hypervisor:  NO 
+* Kernel supports VMScape mitigation:  YES  (found vmscape in kernel image)
+> STATUS:  NOT VULNERABLE  (Not affected)
+
+CVE-2024-45332 aka 'Branch Privilege Injection (BPI)'
+> STATUS:  NOT VULNERABLE  (your CPU vendor reported your CPU model as not affected)
+
+> SUMMARY: CVE-2017-5753:OK  CVE-2017-5715:OK  CVE-2017-5754:OK  CVE-2018-3640:OK 
+           CVE-2018-3639:OK  CVE-2018-3615:OK  CVE-2018-3620:OK  CVE-2018-3646:OK 
+           CVE-2018-12126:OK CVE-2018-12130:OK CVE-2018-12127:OK CVE-2019-11091:OK
+           CVE-2019-11135:OK CVE-2018-12207:OK CVE-2020-0543:OK  CVE-2023-20593:OK
+           CVE-2022-40982:OK CVE-2022-29900:OK CVE-2022-29901:OK CVE-2023-20569:KO
+           CVE-2023-23583:OK CVE-2024-36350:KO CVE-2024-36357:KO CVE-2024-28956:OK
+           CVE-2025-40300:OK CVE-2024-45332:OK
+
+Exercise 1
+
+Consistent pattern across 10 runs:
+
+- array[3×4096] and array[7×4096] (pre-cached): consistently 20-40 cycles → Cache Hits
+
+- Other elements (not pre-cached): consistently 200-1140 cycles → Cache Misses
+
+    → clear gap between hits and misses, confirming the effectiveness of the cache attack in distinguishing between cached and non-cached data.
+
+    Threshold of 100-120 cycles is reasonable to differentiate hits from misses, as hits are well below this threshold and misses are well above it.
+
+Exercise 2
+
+compile the code using:
+
+gcc -march=native flush-reload.c -o flush-reload -O2 -lpthread
+
+./flush-reload n times:
+
+...
+
+I didn't get 94 consistently but I did get 94 a few times, and I also got 3 and 7 consistently, which are the expected results for the attack. The presence of 94 in some runs could be due to noise or other factors affecting the timing measurements, but the consistent appearance of 3 and 7 indicates that the attack is successfully leaking information about the accessed indices.
+
+The CPU is prefetching, so when you access array[94], it also loads neighboring cache lines/indices into the TLB/cache, causing false positives from elements like 95, 96, etc.
+
+Exercise 3
+
+compile the code using:
+
+gcc -march=native out-of-order.c -o out-of-order -O2 -lpthread
+
+./out-of-order n times:
+
+...
+
+Exercise 4
+
+compile the code using:
+
+gcc -march=native spectre.c -o spectre -O2 -lpthread
+
+./spectre n times:
+
+When running these the output doesn't have many neighbouiring indices; they get skipped because the attack is not successful in leaking the data. The results are more random and less consistent compared to the previous exercises, which is expected given the nature of the Spectre attack and the mitigations in place on modern CPUs.
